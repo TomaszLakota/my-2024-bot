@@ -28,15 +28,19 @@ if (args.includes("weeth")) {
     market = markets.weeth;
 }
 console.log(market);
-const size = market === markets.rseth ? 0.01 : 0.2;
+const size = market === markets.rseth ? 0.055 : 0.2;
 const minBuy = market === markets.rseth ? 0.003 : 0.005;
 const interval = market === markets.rseth ? 3000 : 15000;
-const maxBuyPerTx = market === markets.rseth ? 0.01 : 0.001;
+const maxBuyPerTx = market === markets.rseth ? 0.05 : 0.001;
+const maxTransactions = 3; // Maximum number of transactions to send
+let transactionCount = 0; // Counter for the number of transactions sent
+let syBalance = 0;
+let ytBalance = 0;
 main();
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
-        yield fetchTokenHoldings();
-        while (true) {
+        ({ syBalance, ytBalance } = yield fetchTokenHoldings());
+        while (transactionCount < maxTransactions) {
             try {
                 yield loop();
                 yield new Promise((resolve) => setTimeout(resolve, interval));
@@ -45,35 +49,46 @@ function main() {
                 console.log(error);
             }
         }
+        console.log("Maximum transaction limit reached. Bot stopped.");
     });
 }
 function loop() {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         try {
-            const data = yield fetchPrice();
+            const data = yield fetchPrice(size);
             const marketBuyAmount = ((_a = data.marketTrade) === null || _a === void 0 ? void 0 : _a.netFromTaker) || 0;
             const marketBuyAmountInEther = marketBuyAmount / 10 ** 18;
-            const roundedMarketBuyAmountInEther = Math.floor(marketBuyAmountInEther * 10000) / 10000;
+            let roundedMarketBuyAmountInEther = Math.floor(marketBuyAmountInEther * 10000) / 10000;
+            if (market === markets.rseth) {
+                roundedMarketBuyAmountInEther -= 0.005;
+            }
             console.log(roundedMarketBuyAmountInEther, new Date().toLocaleTimeString());
+            console.log(syBalance);
             if (roundedMarketBuyAmountInEther > minBuy) {
                 console.log("buy", new Date().toLocaleTimeString());
-                const amount = roundedMarketBuyAmountInEther > maxBuyPerTx
-                    ? maxBuyPerTx
-                    : roundedMarketBuyAmountInEther;
+                let amount = roundedMarketBuyAmountInEther > maxBuyPerTx ? maxBuyPerTx : roundedMarketBuyAmountInEther;
+                if (amount > syBalance) {
+                    amount = Math.floor(syBalance * 10000) / 10000;
+                }
+                console.log(amount, syBalance);
                 const price = data.marketTrade.netFromTaker / data.marketTrade.netToTaker;
                 yield (0, sy_swap_1.swapExactSyForYt)(market, amount, price);
+                transactionCount++; // Increment the transaction count
                 node_notifier_1.default.notify({
                     title: "BOT BUYING on " + market,
                     message: `BOT BUYING ${roundedMarketBuyAmountInEther} ${market}`,
                     sound: true,
                     wait: true,
                 });
+                yield fetchRestToBuy();
                 yield new Promise((resolve) => setTimeout(resolve, 10000));
+                ({ syBalance, ytBalance } = yield fetchTokenHoldings());
             }
         }
         catch (error) {
             console.error("Error:", error);
+            transactionCount++; // Increment the transaction count for errors
             node_notifier_1.default.notify({
                 title: "BOT ERROR on " + market,
                 message: `error on ${market}`,
@@ -84,7 +99,7 @@ function loop() {
         }
     });
 }
-function fetchPrice() {
+function fetchPrice(size) {
     return __awaiter(this, void 0, void 0, function* () {
         const netFromTaker = size * Math.pow(10, 18);
         const postData = {
@@ -118,19 +133,20 @@ function fetchPrice() {
 function fetchTokenHoldings() {
     return __awaiter(this, void 0, void 0, function* () {
         const provider = new ethers_1.ethers.providers.JsonRpcProvider(pk_json_1.rpcUrl);
-        const tokenAbi = [
-            "function balanceOf(address account) view returns (uint256)",
-        ];
+        const tokenAbi = ["function balanceOf(address account) view returns (uint256)"];
         try {
             const swap = market === markets.rseth ? consts_1.rsethSwap : consts_1.weethSwap;
             const syTokenAddress = swap.tokenMintSy;
             const ytTokenAddress = swap.tokenYt;
             const syTokenContract = new ethers_1.ethers.Contract(syTokenAddress, tokenAbi, provider);
             const ytTokenContract = new ethers_1.ethers.Contract(ytTokenAddress, tokenAbi, provider);
-            const syBalance = yield syTokenContract.balanceOf(pk_json_1.walletAddress);
-            const ytBalance = yield ytTokenContract.balanceOf(pk_json_1.walletAddress);
-            console.log(`SY Token Balance: ${ethers_1.ethers.utils.formatUnits(syBalance, 18)}`);
-            console.log(`YT Token Balance: ${ethers_1.ethers.utils.formatUnits(ytBalance, 18)}`);
+            const syBalanceBN = yield syTokenContract.balanceOf(pk_json_1.walletAddress);
+            const ytBalanceBN = yield ytTokenContract.balanceOf(pk_json_1.walletAddress);
+            const syBalance = Number(ethers_1.ethers.utils.formatUnits(syBalanceBN, 18));
+            const ytBalance = Number(ethers_1.ethers.utils.formatUnits(ytBalanceBN, 18));
+            console.log(`SY Token Balance: ${syBalance}`);
+            console.log(`YT Token Balance: ${ytBalance}`);
+            return { syBalance, ytBalance };
         }
         catch (error) {
             console.error("Error fetching token holdings:", error);
@@ -138,3 +154,20 @@ function fetchTokenHoldings() {
     });
 }
 exports.fetchTokenHoldings = fetchTokenHoldings;
+function fetchRestToBuy() {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a;
+        let size = 0.5;
+        const data = yield fetchPrice(size);
+        const marketBuyAmount = ((_a = data.marketTrade) === null || _a === void 0 ? void 0 : _a.netFromTaker) || 0;
+        const marketBuyAmountInEther = marketBuyAmount / 10 ** 18;
+        let roundedMarketBuyAmountInEther = Math.floor(marketBuyAmountInEther * 10000) / 10000;
+        console.log(roundedMarketBuyAmountInEther, new Date().toLocaleTimeString());
+        node_notifier_1.default.notify({
+            title: "BOT remaining size on " + market,
+            message: `You can buy ${marketBuyAmountInEther}`,
+            sound: true,
+            wait: true,
+        });
+    });
+}
