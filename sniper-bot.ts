@@ -1,10 +1,14 @@
 import notifier from "node-notifier";
 import { swapExactSyForYt } from "./sy-swap";
+import { ethers } from "ethers";
+import { walletAddress, rpcUrl } from "./pk.json";
+import { weethSwap, rsethSwap } from "./consts";
 
 const markets = {
   rseth: "rseth",
   weeth: "weeth",
 } as const;
+
 let market: "rseth" | "weeth" = markets.rseth;
 const args = process.argv.slice(2);
 if (args.includes("weeth")) {
@@ -16,9 +20,12 @@ const size = market === markets.rseth ? 0.01 : 0.2;
 const minBuy = market === markets.rseth ? 0.003 : 0.005;
 const interval = market === markets.rseth ? 3000 : 15000;
 const maxBuyPerTx = market === markets.rseth ? 0.01 : 0.001;
+
 main();
 
 async function main() {
+  await fetchTokenHoldings();
+
   while (true) {
     try {
       await loop();
@@ -32,7 +39,6 @@ async function main() {
 async function loop() {
   try {
     const data: any = await fetchPrice();
-
     const marketBuyAmount = data.marketTrade?.netFromTaker || 0;
     const marketBuyAmountInEther = marketBuyAmount / 10 ** 18;
     const roundedMarketBuyAmountInEther =
@@ -41,7 +47,6 @@ async function loop() {
 
     if (roundedMarketBuyAmountInEther > minBuy) {
       console.log("buy", new Date().toLocaleTimeString());
-
       const amount =
         roundedMarketBuyAmountInEther > maxBuyPerTx
           ? maxBuyPerTx
@@ -49,7 +54,7 @@ async function loop() {
       const price = data.marketTrade.netFromTaker / data.marketTrade.netToTaker;
       await swapExactSyForYt(market, amount, price);
       notifier.notify({
-        title: "BOT BYING on " + market,
+        title: "BOT BUYING on " + market,
         message: `BOT BUYING ${roundedMarketBuyAmountInEther} ${market}`,
         sound: true,
         wait: true,
@@ -84,12 +89,50 @@ async function fetchPrice() {
   const postHeaders = {
     "Content-Type": "application/json",
   };
-  const fetch = (await import("node-fetch")).default;
-  const response = await fetch(postUrl, {
-    method: "POST",
-    headers: postHeaders,
-    body: JSON.stringify(postData),
-  });
-  const data = await response.json();
-  return data;
+
+  try {
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(postUrl, {
+      method: "POST",
+      headers: postHeaders,
+      body: JSON.stringify(postData),
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching price:", error);
+    throw error;
+  }
+}
+
+export async function fetchTokenHoldings() {
+  const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+  const tokenAbi = [
+    "function balanceOf(address account) view returns (uint256)",
+  ];
+
+  try {
+    const swap = market === markets.rseth ? rsethSwap : weethSwap;
+    const syTokenAddress = swap.tokenMintSy;
+    const ytTokenAddress = swap.tokenYt;
+
+    const syTokenContract = new ethers.Contract(
+      syTokenAddress,
+      tokenAbi,
+      provider
+    );
+    const ytTokenContract = new ethers.Contract(
+      ytTokenAddress,
+      tokenAbi,
+      provider
+    );
+
+    const syBalance = await syTokenContract.balanceOf(walletAddress);
+    const ytBalance = await ytTokenContract.balanceOf(walletAddress);
+
+    console.log(`SY Token Balance: ${ethers.utils.formatUnits(syBalance, 18)}`);
+    console.log(`YT Token Balance: ${ethers.utils.formatUnits(ytBalance, 18)}`);
+  } catch (error) {
+    console.error("Error fetching token holdings:", error);
+  }
 }

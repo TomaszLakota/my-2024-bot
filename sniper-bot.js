@@ -12,8 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.fetchTokenHoldings = void 0;
 const node_notifier_1 = __importDefault(require("node-notifier"));
 const sy_swap_1 = require("./sy-swap");
+const ethers_1 = require("ethers");
+const pk_json_1 = require("./pk.json");
+const consts_1 = require("./consts");
 const markets = {
     rseth: "rseth",
     weeth: "weeth",
@@ -31,6 +35,7 @@ const maxBuyPerTx = market === markets.rseth ? 0.01 : 0.001;
 main();
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
+        yield fetchTokenHoldings();
         while (true) {
             try {
                 yield loop();
@@ -59,7 +64,7 @@ function loop() {
                 const price = data.marketTrade.netFromTaker / data.marketTrade.netToTaker;
                 yield (0, sy_swap_1.swapExactSyForYt)(market, amount, price);
                 node_notifier_1.default.notify({
-                    title: "BOT BYING on " + market,
+                    title: "BOT BUYING on " + market,
                     message: `BOT BUYING ${roundedMarketBuyAmountInEther} ${market}`,
                     sound: true,
                     wait: true,
@@ -94,13 +99,42 @@ function fetchPrice() {
         const postHeaders = {
             "Content-Type": "application/json",
         };
-        const fetch = (yield import("node-fetch")).default;
-        const response = yield fetch(postUrl, {
-            method: "POST",
-            headers: postHeaders,
-            body: JSON.stringify(postData),
-        });
-        const data = yield response.json();
-        return data;
+        try {
+            const fetch = (yield import("node-fetch")).default;
+            const response = yield fetch(postUrl, {
+                method: "POST",
+                headers: postHeaders,
+                body: JSON.stringify(postData),
+            });
+            const data = yield response.json();
+            return data;
+        }
+        catch (error) {
+            console.error("Error fetching price:", error);
+            throw error;
+        }
     });
 }
+function fetchTokenHoldings() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const provider = new ethers_1.ethers.providers.JsonRpcProvider(pk_json_1.rpcUrl);
+        const tokenAbi = [
+            "function balanceOf(address account) view returns (uint256)",
+        ];
+        try {
+            const swap = market === markets.rseth ? consts_1.rsethSwap : consts_1.weethSwap;
+            const syTokenAddress = swap.tokenMintSy;
+            const ytTokenAddress = swap.tokenYt;
+            const syTokenContract = new ethers_1.ethers.Contract(syTokenAddress, tokenAbi, provider);
+            const ytTokenContract = new ethers_1.ethers.Contract(ytTokenAddress, tokenAbi, provider);
+            const syBalance = yield syTokenContract.balanceOf(pk_json_1.walletAddress);
+            const ytBalance = yield ytTokenContract.balanceOf(pk_json_1.walletAddress);
+            console.log(`SY Token Balance: ${ethers_1.ethers.utils.formatUnits(syBalance, 18)}`);
+            console.log(`YT Token Balance: ${ethers_1.ethers.utils.formatUnits(ytBalance, 18)}`);
+        }
+        catch (error) {
+            console.error("Error fetching token holdings:", error);
+        }
+    });
+}
+exports.fetchTokenHoldings = fetchTokenHoldings;
