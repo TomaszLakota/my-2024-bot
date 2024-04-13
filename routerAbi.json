@@ -1,0 +1,211 @@
+[
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minYtOut",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "guessMin",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "guessMax",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "guessOffchain",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxIteration",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "eps",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ApproxParams",
+          "name": "guessYtOut",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "tokenIn",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netTokenIn",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "tokenMintSy",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "pendleSwap",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes",
+              "name": "swapData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct TokenInput",
+          "name": "input",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "limitRouter",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "epsSkipMarket",
+              "type": "uint256"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "orderHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "orderBytes",
+                  "type": "bytes"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "fillSyDesired",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address[]",
+                  "name": "paths",
+                  "type": "address[]"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "pathAmountDesired",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "pathAmountFilled",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "deadline",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct FillOrderParams[]",
+              "name": "normalFills",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "orderHash",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "orderBytes",
+                  "type": "bytes"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "fillSyDesired",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "address[]",
+                  "name": "paths",
+                  "type": "address[]"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "pathAmountDesired",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "pathAmountFilled",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "deadline",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct FillOrderParams[]",
+              "name": "flashFills",
+              "type": "tuple[]"
+            },
+            {
+              "internalType": "bytes",
+              "name": "optData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct LimitOrderData",
+          "name": "limit",
+          "type": "tuple"
+        }
+      ],
+      "name": "swapExactTokenForYt",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "netYtOut",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "netSyFee",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "netSyInterm",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    }
+  ]
