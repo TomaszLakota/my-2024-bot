@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.rsethSwap = exports.weethSwap = void 0;
 exports.weethSwap = {
-    tokenIn: "0x35751007a407ca6feffe80b3cb397736d2cf4dbe",
-    tokenMintSy: "0x35751007a407ca6feffe80b3cb397736d2cf4dbe",
+    tokenIn: "0xa6c895eb332e91c5b3d00b7baeeaae478cc502da",
+    tokenMintSy: "0xa6c895eb332e91c5b3d00b7baeeaae478cc502da",
     tokenYt: "0xf28db483773e3616da91fdfa7b5d4090ac40cc59",
     market: "0xe11f9786b06438456b044b3e21712228adcaa0d1",
 };
