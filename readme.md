@@ -1,11 +1,12 @@
 # Yield Tokenization Protocol Trading Automation
 
-This repository demonstrates an advanced trading bot developed for interacting with complex DeFi smart contracts on Ethereum, specifically those utilizing a diamond proxy (EIP-2535) architecture.
+This repository demonstrates an advanced trading bot developed for interacting with complex DeFi smart contracts on Ethereum, specifically one utilizing a diamond proxy (EIP-2535) architecture.
 
 Key aspects:
 
-- Interacts with multi-layered DeFi smart contracts.
+- Interacts with multi-layered DeFi smart contract - Pendle Finance ($3 000 000 000 Total Value Locked).
 - Successfully integrated with a diamond proxy contract.
+- Made profit
 - Leveraged AI tools to accelerate development and integration.
 
 This code serves as a proof-of-concept and demonstration of capabilities. Please note that it was developed rapidly for personal use for a specific, short-term use case and the code structure reflects this (it's ugly ;)).
